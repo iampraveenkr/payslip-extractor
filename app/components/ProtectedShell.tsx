@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient, hasSupabaseEnv } from '@/lib/supabase';
 
 type Profile = {
   full_name: string | null;
@@ -25,6 +25,10 @@ export default function ProtectedShell({ children }: { children: React.ReactNode
   const [profile, setProfile] = useState<Profile>({ full_name: null, company_name: null });
 
   useEffect(() => {
+    if (!hasSupabaseEnv()) {
+      return;
+    }
+
     const loadProfile = async () => {
       const {
         data: { user },
@@ -59,6 +63,11 @@ export default function ProtectedShell({ children }: { children: React.ReactNode
   }, [profile.full_name]);
 
   const handleLogout = async () => {
+    if (!hasSupabaseEnv()) {
+      router.replace('/login');
+      return;
+    }
+
     await getSupabaseClient().auth.signOut();
     router.replace('/login');
   };
@@ -68,12 +77,12 @@ export default function ProtectedShell({ children }: { children: React.ReactNode
       <aside className="sidebar">
         <div>
           <div className="logo">PayslipIQ</div>
-          <nav className="nav-list">
+          <nav className="nav-list" aria-label="Main navigation">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link key={item.href} href={item.href} className={`nav-item ${isActive ? 'active' : ''}`}>
-                  <span>{item.icon}</span>
+                  <span aria-hidden="true">{item.icon}</span>
                   <span>{item.label}</span>
                 </Link>
               );
@@ -87,7 +96,7 @@ export default function ProtectedShell({ children }: { children: React.ReactNode
             <div className="user-name">{profile.full_name || 'PayslipIQ User'}</div>
             <div className="company-name">{profile.company_name || 'Your Company'}</div>
           </div>
-          <button className="logout-button" onClick={handleLogout}>Logout</button>
+          <button className="logout-button" onClick={handleLogout} type="button">Logout</button>
         </div>
       </aside>
       <main className="main-content">{children}</main>

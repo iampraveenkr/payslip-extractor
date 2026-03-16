@@ -1,6 +1,12 @@
 # PayslipIQ Supabase Auth + Dashboard Setup
 
-## 1) Add your Supabase credentials
+## 1) Install dependencies
+
+```bash
+npm install
+```
+
+## 2) Add your Supabase credentials
 
 Copy `.env.example` to `.env.local` and fill values:
 
@@ -11,14 +17,16 @@ cp .env.example .env.local
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-## 2) Create database tables
+> If these variables are missing, the app now shows a clear in-app configuration notice instead of crashing.
+
+## 3) Create database tables
 
 Run these SQL files in your Supabase SQL editor:
 
 - `supabase/users_profile.sql`
 - `supabase/extractions.sql`
 
-## 3) Start the app
+## 4) Start the app
 
 ```bash
 npm run dev

@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient, hasSupabaseEnv } from '@/lib/supabase';
+import SupabaseConfigNotice from '@/app/components/SupabaseConfigNotice';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -14,6 +15,11 @@ export default function LoginPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
+
+    if (!hasSupabaseEnv()) {
+      setError('Supabase is not configured.');
+      return;
+    }
 
     const { error: signInError } = await getSupabaseClient().auth.signInWithPassword({ email, password });
 
@@ -27,6 +33,7 @@ export default function LoginPage() {
 
   return (
     <main className="container">
+      {!hasSupabaseEnv() ? <SupabaseConfigNotice /> : null}
       <div className="card">
         <h1>Login</h1>
         <form onSubmit={handleSubmit}>

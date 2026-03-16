@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient, hasSupabaseEnv } from '@/lib/supabase';
+import SupabaseConfigNotice from '@/app/components/SupabaseConfigNotice';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -13,6 +14,11 @@ export default function ForgotPasswordPage() {
     event.preventDefault();
     setError('');
     setSuccess('');
+
+    if (!hasSupabaseEnv()) {
+      setError('Supabase is not configured.');
+      return;
+    }
 
     const { error: resetError } = await getSupabaseClient().auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/login`,
@@ -28,6 +34,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <main className="container">
+      {!hasSupabaseEnv() ? <SupabaseConfigNotice /> : null}
       <div className="card">
         <h1>Forgot Password</h1>
         <form onSubmit={handleSubmit}>

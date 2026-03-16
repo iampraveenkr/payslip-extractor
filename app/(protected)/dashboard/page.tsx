@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient, hasSupabaseEnv } from '@/lib/supabase';
 
 type Profile = {
   credits_used: number | null;
@@ -17,55 +17,92 @@ type Extraction = {
   created_at: string;
 };
 
+function statusClass(status: string | null) {
+  const normalized = (status || '').toLowerCase();
+  if (normalized === 'completed') return 'completed';
+  if (normalized === 'processing') return 'processing';
+  if (normalized === 'failed') return 'failed';
+  return 'processing';
+}
+
 export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile>({ credits_used: 0, credits_limit: 10 });
   const [monthlyProcessed, setMonthlyProcessed] = useState(0);
   const [excelDownloads, setExcelDownloads] = useState(0);
   const [recentExtractions, setRecentExtractions] = useState<Extraction[]>([]);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
+    if (!hasSupabaseEnv()) {
+      return;
+    }
+
     const loadData = async () => {
-      const {
-        data: { user },
-      } = await getSupabaseClient().auth.getUser();
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await getSupabaseClient().auth.getUser();
 
-      if (!user) {
-        return;
+        if (userError) {
+          setLoadError(userError.message);
+          return;
+        }
+
+        if (!user) {
+          return;
+        }
+
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const [profileRes, monthlyRes, recentRes, allHistoryRes] = await Promise.all([
+          getSupabaseClient()
+            .from('users_profile')
+            .select('credits_used, credits_limit')
+            .eq('id', user.id)
+            .single(),
+          getSupabaseClient()
+            .from('extractions')
+            .select('payslip_count')
+            .eq('user_id', user.id)
+            .gte('created_at', startOfMonth.toISOString()),
+          getSupabaseClient()
+            .from('extractions')
+            .select('id, file_names, payslip_count, status, created_at')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(5),
+          getSupabaseClient()
+            .from('extractions')
+            .select('status')
+            .eq('user_id', user.id),
+        ]);
+
+        if (profileRes.error || monthlyRes.error || recentRes.error || allHistoryRes.error) {
+          const firstError = profileRes.error || monthlyRes.error || recentRes.error || allHistoryRes.error;
+          setLoadError(firstError?.message || 'Failed to load dashboard data.');
+          return;
+        }
+
+        if (profileRes.data) {
+          setProfile(profileRes.data);
+        }
+
+        const processed = (monthlyRes.data || []).reduce((sum, row) => sum + (row.payslip_count || 0), 0);
+        setMonthlyProcessed(processed);
+
+        const rows = recentRes.data || [];
+        setRecentExtractions(rows);
+
+        const completedDownloads = (allHistoryRes.data || []).filter(
+          (row) => row.status?.toLowerCase() === 'completed',
+        ).length;
+        setExcelDownloads(completedDownloads);
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : 'Failed to load dashboard data.');
       }
-
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-
-      const [profileRes, monthlyRes, historyRes] = await Promise.all([
-        getSupabaseClient()
-          .from('users_profile')
-          .select('credits_used, credits_limit')
-          .eq('id', user.id)
-          .single(),
-        getSupabaseClient()
-          .from('extractions')
-          .select('payslip_count')
-          .eq('user_id', user.id)
-          .gte('created_at', startOfMonth.toISOString()),
-        getSupabaseClient()
-          .from('extractions')
-          .select('id, file_names, payslip_count, status, created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(5),
-      ]);
-
-      if (profileRes.data) {
-        setProfile(profileRes.data);
-      }
-
-      const processed = (monthlyRes.data || []).reduce((sum, row) => sum + (row.payslip_count || 0), 0);
-      setMonthlyProcessed(processed);
-
-      const rows = historyRes.data || [];
-      setRecentExtractions(rows);
-      setExcelDownloads(rows.filter((row) => row.status?.toLowerCase() === 'completed').length);
     };
 
     void loadData();
@@ -82,12 +119,14 @@ export default function DashboardPage() {
       ...entry,
       fileLabel: entry.file_names?.join(', ') || 'Untitled file',
       dateLabel: new Date(entry.created_at).toLocaleDateString(),
+      statusLabel: entry.status || 'Processing',
     }));
   }, [recentExtractions]);
 
   return (
     <section>
       <h1 className="dashboard-title">Dashboard Overview</h1>
+      {loadError ? <div className="error-card">{loadError}</div> : null}
 
       <div className="stats-grid">
         <div className="stat-card"><p>Payslips Processed This Month</p><h3>{monthlyProcessed}</h3></div>
@@ -123,10 +162,8 @@ export default function DashboardPage() {
                   <td>{row.fileLabel}</td>
                   <td>{row.dateLabel}</td>
                   <td>{row.payslip_count || 0}</td>
-                  <td>
-                    <span className={`status-badge ${(row.status || '').toLowerCase()}`}>{row.status || 'Unknown'}</span>
-                  </td>
-                  <td>{(row.status || '').toLowerCase() === 'completed' ? <a href="#">Download</a> : '—'}</td>
+                  <td><span className={`status-badge ${statusClass(row.status)}`}>{row.statusLabel}</span></td>
+                  <td>{statusClass(row.status) === 'completed' ? 'Available' : '—'}</td>
                 </tr>
               ))}
             </tbody>

@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient, hasSupabaseEnv } from '@/lib/supabase';
+import SupabaseConfigNotice from '@/app/components/SupabaseConfigNotice';
 import Toast from '@/app/components/Toast';
 
 export default function SignUpPage() {
@@ -18,6 +19,11 @@ export default function SignUpPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
+
+    if (!hasSupabaseEnv()) {
+      setError('Supabase is not configured.');
+      return;
+    }
 
     const { data, error: signUpError } = await getSupabaseClient().auth.signUp({
       email,
@@ -56,6 +62,7 @@ export default function SignUpPage() {
 
   return (
     <main className="container">
+      {!hasSupabaseEnv() ? <SupabaseConfigNotice /> : null}
       <div className="card">
         <h1>Create your account</h1>
         <form onSubmit={handleSubmit}>

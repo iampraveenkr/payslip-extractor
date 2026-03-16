@@ -2,20 +2,40 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient, hasSupabaseEnv } from '@/lib/supabase';
+import SupabaseConfigNotice from '@/app/components/SupabaseConfigNotice';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState('');
   const router = useRouter();
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await getSupabaseClient().auth.getSession();
-      if (!data.session) {
-        router.replace('/login');
-        return;
-      }
+    if (!hasSupabaseEnv()) {
       setLoading(false);
+      return;
+    }
+
+    const checkSession = async () => {
+      try {
+        const { data, error } = await getSupabaseClient().auth.getSession();
+
+        if (error) {
+          setAuthError(error.message);
+          setLoading(false);
+          return;
+        }
+
+        if (!data.session) {
+          router.replace('/login');
+          return;
+        }
+
+        setLoading(false);
+      } catch (error) {
+        setAuthError(error instanceof Error ? error.message : 'Authentication check failed.');
+        setLoading(false);
+      }
     };
 
     void checkSession();
@@ -31,8 +51,28 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, [router]);
 
+  if (!hasSupabaseEnv()) {
+    return (
+      <main className="container">
+        <SupabaseConfigNotice />
+      </main>
+    );
+  }
+
   if (loading) {
-    return <main className="container"><div className="card">Checking authentication...</div></main>;
+    return (
+      <main className="container">
+        <div className="card">Checking authentication...</div>
+      </main>
+    );
+  }
+
+  if (authError) {
+    return (
+      <main className="container">
+        <div className="error-card">{authError}</div>
+      </main>
+    );
   }
 
   return <>{children}</>;

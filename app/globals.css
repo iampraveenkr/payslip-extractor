@@ -56,6 +56,23 @@ a { color: #2563eb; text-decoration: none; }
   box-shadow: 0 8px 18px rgba(0,0,0,0.3);
 }
 
+.error-card {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.error-card h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+.error-card p {
+  margin: 0;
+  line-height: 1.4;
+}
+
 .app-shell {
   display: flex;
   min-height: 100vh;
