@@ -1,4 +1,4 @@
-# PayslipIQ Supabase Auth Setup
+# PayslipIQ Supabase Auth + Dashboard Setup
 
 ## 1) Add your Supabase credentials
 
@@ -11,9 +11,12 @@ cp .env.example .env.local
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-## 2) Create the `users_profile` table
+## 2) Create database tables
 
-Run the SQL in `supabase/users_profile.sql` in the Supabase SQL editor.
+Run these SQL files in your Supabase SQL editor:
+
+- `supabase/users_profile.sql`
+- `supabase/extractions.sql`
 
 ## 3) Start the app
 
@@ -26,3 +29,4 @@ Pages:
 - `/login`
 - `/forgot-password`
 - `/dashboard` (protected)
+- `/extract`, `/history`, `/api-access`, `/billing`, `/settings` (protected)
