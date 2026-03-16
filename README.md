@@ -1,0 +1,28 @@
+# PayslipIQ Supabase Auth Setup
+
+## 1) Add your Supabase credentials
+
+Copy `.env.example` to `.env.local` and fill values:
+
+```bash
+cp .env.example .env.local
+```
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+## 2) Create the `users_profile` table
+
+Run the SQL in `supabase/users_profile.sql` in the Supabase SQL editor.
+
+## 3) Start the app
+
+```bash
+npm run dev
+```
+
+Pages:
+- `/signup`
+- `/login`
+- `/forgot-password`
+- `/dashboard` (protected)
