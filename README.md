@@ -39,20 +39,40 @@ Pages:
 - `/dashboard` (protected)
 - `/extract`, `/history`, `/api-access`, `/billing`, `/settings` (protected)
 
-## Branch strategy for one SaaS app
+## Merge landing page branch into the single SaaS app
 
-If you have another feature branch (for example a landing-page branch), keep it separate while developing, then merge it into `work` before release so everything ships as one SaaS application.
+You mentioned this branch name:
 
-Quick merge flow:
+- `codex/build-payslipiq-landing-page`
+
+To combine everything into one app, merge that branch into `work`.
+
+### If the branch is already local
 
 ```bash
 git checkout work
-git merge <landing-page-branch>
+git merge codex/build-payslipiq-landing-page
 ```
 
-If there are conflicts, resolve them and re-run:
+### If the branch exists on remote only
+
+```bash
+git fetch origin codex/build-payslipiq-landing-page:codex/build-payslipiq-landing-page
+git checkout work
+git merge codex/build-payslipiq-landing-page
+```
+
+Or use the helper script:
+
+```bash
+./scripts/merge-landing-branch.sh
+```
+
+After merge:
 
 ```bash
 npm run lint
 npm run build
 ```
+
+If there are conflicts, resolve them, commit, and run the two checks again.
