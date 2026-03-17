@@ -38,3 +38,21 @@ Pages:
 - `/forgot-password`
 - `/dashboard` (protected)
 - `/extract`, `/history`, `/api-access`, `/billing`, `/settings` (protected)
+
+## Branch strategy for one SaaS app
+
+If you have another feature branch (for example a landing-page branch), keep it separate while developing, then merge it into `work` before release so everything ships as one SaaS application.
+
+Quick merge flow:
+
+```bash
+git checkout work
+git merge <landing-page-branch>
+```
+
+If there are conflicts, resolve them and re-run:
+
+```bash
+npm run lint
+npm run build
+```
