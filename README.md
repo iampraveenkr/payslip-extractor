@@ -16,6 +16,7 @@ cp .env.example .env.local
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `ANTHROPIC_API_KEY`
 
 > If these variables are missing, the app now shows a clear in-app configuration notice instead of crashing.
 
@@ -25,6 +26,7 @@ Run these SQL files in your Supabase SQL editor:
 
 - `supabase/users_profile.sql`
 - `supabase/extractions.sql`
+- `supabase/storage_payslips.sql`
 
 ## 4) Start the app
 
@@ -38,6 +40,7 @@ Pages:
 - `/forgot-password`
 - `/dashboard` (protected)
 - `/extract`, `/history`, `/api-access`, `/billing`, `/settings` (protected)
+- `/results/:id` (protected)
 
 ## Merge landing page branch into the single SaaS app
 
