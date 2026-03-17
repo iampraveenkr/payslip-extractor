@@ -18,12 +18,31 @@ type Extraction = {
   result_json: ResultRow[] | null;
 };
 
+type MockExtractionPayload = {
+  extractionId: string;
+  message: string;
+  results: ResultRow[];
+};
+
 export default function ResultsPage() {
   const params = useParams<{ id: string }>();
   const [data, setData] = useState<Extraction | null>(null);
+  const [mockData, setMockData] = useState<MockExtractionPayload | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (params.id.startsWith('mock_')) {
+      if (typeof window !== 'undefined') {
+        const raw = window.sessionStorage.getItem(`mock_result_${params.id}`);
+        if (raw) {
+          setMockData(JSON.parse(raw) as MockExtractionPayload);
+          return;
+        }
+      }
+      setError('Mock extraction result not found in session.');
+      return;
+    }
+
     const load = async () => {
       const { data: row, error: rowError } = await getSupabaseClient()
         .from('extractions')
@@ -44,6 +63,28 @@ export default function ResultsPage() {
 
   if (error) {
     return <section className="table-card"><h1>Results</h1><p className="error">{error}</p></section>;
+  }
+
+  if (mockData) {
+    return (
+      <section className="table-card">
+        <h1>Extraction Results</h1>
+        <p><strong>Mode:</strong> Mock local extraction</p>
+        <p>{mockData.message}</p>
+        <div className="file-list">
+          {mockData.results.map((row, idx) => (
+            <div key={`${row.file_name}-${idx}`} className={`file-row ${(row.status || '').toLowerCase() === 'failed' ? 'failed' : ''}`}>
+              <span className="file-icon">📄</span>
+              <span className="file-name">{row.file_name || 'Unknown file'}</span>
+              <span className={`status-badge ${(row.status || '').toLowerCase() === 'failed' ? 'failed' : 'completed'}`}>
+                {row.status || 'Completed'}
+              </span>
+              {row.error ? <span className="file-error">{row.error}</span> : null}
+            </div>
+          ))}
+        </div>
+      </section>
+    );
   }
 
   return (

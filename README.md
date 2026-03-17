@@ -18,6 +18,8 @@ cp .env.example .env.local
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `ANTHROPIC_API_KEY`
 
+- `USE_MOCK_EXTRACTION` (set to `true` for local testing without Claude key)
+
 > If these variables are missing, the app now shows a clear in-app configuration notice instead of crashing.
 
 ## 3) Create database tables

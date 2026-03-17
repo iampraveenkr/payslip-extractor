@@ -114,8 +114,11 @@ export default function ExtractPage() {
       const {
         data: { session },
       } = await getSupabaseClient().auth.getSession();
+      const {
+        data: { user },
+      } = await getSupabaseClient().auth.getUser();
 
-      if (!session?.access_token) {
+      if (!session?.access_token || !user?.id) {
         throw new Error('Please login again before extracting.');
       }
 
@@ -148,6 +151,14 @@ export default function ExtractPage() {
       }
 
       setStatusMessage(data.message);
+
+      if (data.extractionMode === 'mock-local') {
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.setItem(`mock_result_${data.extractionId}`, JSON.stringify(data));
+        }
+        router.push(`/results/${data.extractionId}`);
+        return;
+      }
 
       setFiles((prev) =>
         prev.map((entry) => {
